@@ -22,6 +22,7 @@ const options = {
   audioSource: 6, // android only (see below)
   bufferSize: 4096, // default is 2048
 };
+import socket from './utils/socket';
 
 let rooms = [
   {
@@ -106,14 +107,13 @@ const App = () => {
   const initCall = async () => {
     try {
       let per = await permission();
-      console.log(per);
       if (per['android.permission.RECORD_AUDIO'] === 'granted') {
         LiveAudioStream.init(options);
         LiveAudioStream.start();
         LiveAudioStream.on('data', data => {
           // base64-encoded audio data chunks
           var chunk = Buffer.from(data, 'base64');
-          console.log('data', chunk);
+          socket.emit('audioMessage', data);
         });
       }
     } catch (error) {
@@ -123,6 +123,8 @@ const App = () => {
 
   React.useEffect(() => {
     if (onMic) {
+      socket.emit('teste', 'worl');
+
       initCall();
     } else {
       LiveAudioStream.stop();
@@ -133,17 +135,26 @@ const App = () => {
     };
   }, [onMic]);
 
+  React.useLayoutEffect(() => {
+    socket.connect();
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
   return (
     <View style={styles.page}>
       {rooms.map(item => (
         <Pressable
-          key={item.id_room}
+          key={item.name_room}
           style={styles.roomContainer}
           onPress={() => setUser({id_room: item.id})}>
           <Text style={styles.titleRoom}>Sala {item.name_room}</Text>
           <View>
             {item.room.map(item => (
-              <Text style={styles.text}>{item.name}</Text>
+              <Text key={item.name} style={styles.text}>
+                {item.name}
+              </Text>
             ))}
           </View>
           {user.id_room === item.id && <Text style={styles.text}>IGOR</Text>}
