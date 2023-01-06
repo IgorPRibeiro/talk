@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useContext, useEffect, useState} from 'react';
 import {
   Button,
   PermissionsAndroid,
@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 import RNFetchBlob from 'rn-fetch-blob';
-import io from 'socket.io-client';
+
 const dirs = RNFetchBlob.fs.dirs;
 const path = Platform.select({
   ios: 'hello.m4a',
@@ -16,25 +16,53 @@ const path = Platform.select({
 });
 
 const audioRecorderPlayer = new AudioRecorderPlayer();
-const App = () => {
+
+import {SocketContext} from './context/context';
+
+const Child = () => {
   const [recordSecs, setRecordSecs] = useState();
   const [recordTme, setrecordTme] = useState();
   const [currentPositionSec, setCurrentPositionSec] = useState();
   const [curretnDurationSec, setcurretnDurationSec] = useState();
   const [playTime, setPlayTime] = useState();
   const [duration, setDuration] = useState();
-
-  const socket = useMemo(
-    () =>
-      io('http://localhost:9090', {
-        autoConnect: false,
-        reconnection: false,
-      }),
-    [],
-  );
-  useEffect(() => {
-    socket.connect();
+  // console.log('dirs', dirs);
+  const socket = useContext(SocketContext);
+  // useEffect(() => {
+  //   socket.connect();
+  //   socket.on('user', function (usercount) {
+  //     console.log('auisdpsa', usercount);
+  //     Alert.alert('socket');
+  //   });
+  //   socket.on('audioMessage', function (audioChunks) {
+  //     console.log('adiomano');
+  //     Alert.alert('socket');
+  //   });
+  //   return () => {
+  //     socket.off('connect');
+  //     socket.off('pong');
+  //   };
+  // }, []);
+  const sendPing = useCallback(() => {
+    socket.emit('testeMessage', 'testantodas');
   }, []);
+
+  useEffect(() => {
+    console.log('eu', socket);
+    if (socket.connected) {
+      console.log('adsdsa');
+      socket.connect();
+    }
+    socket.on('testeMessage', a => {
+      console.log(a);
+    });
+  }, [socket]);
+
+  // const sendPing = () => {
+  //   socket.current.emit('testeMessage', 'mobile');
+  //   // socket.current.disconnect();
+  //   Alert.alert('tentei mandar msg', `${socket.current.connected}`);
+  // };
 
   const checkPermission = async () => {
     try {
@@ -115,11 +143,7 @@ const App = () => {
         <Button onPress={() => onStopRecord()} title="stop record" />
       </View>
       <View style={{}}>
-        <Button
-          color="green"
-          onPress={() => socket.emit('testeMessage', 'ola')}
-          title="send audio"
-        />
+        <Button color="green" onPress={() => sendPing()} title="send audio" />
       </View>
       <View style={{}}>
         <Button onPress={() => onStartPlay()} title="start play" />
@@ -130,6 +154,6 @@ const App = () => {
   );
 };
 
-export default App;
+export default Child;
 
 const styles = StyleSheet.create({});
